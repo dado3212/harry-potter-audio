@@ -1,0 +1,7 @@
+*.jpg
+secret.py
+__pycache__
+.DS_Store
+config.local.js
+.htaccess
+.htpasswd
