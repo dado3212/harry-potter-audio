@@ -100,7 +100,7 @@
     <div class="toolbar">
       <button id="b15" class="primary">Easy · 15s</button>
       <button id="b10" class="primary">Medium · 10s</button>
-      <button id="b5"  class="primary">Hard · 5s</button>
+      <button id="b3"  class="primary">Hard · 3s</button>
       <button id="b1"  class="primary">Impossible · 1s</button>
     </div>
     <div class="label" id="status" style="margin: 0 0 10px 0;">Pick a difficulty to play an audio clip. Then guess the movie!</div>
@@ -136,7 +136,7 @@
     canvas.height = window.innerHeight;
   });
 
-  const btns = { b15:15, b10:10, b5:5, b1:1 };
+  const btns = { b15:15, b10:10, b3:3, b1:1 };
   Object.entries(btns).forEach(([id,len]) => {
     document.getElementById(id).onclick = () => startRound(len);
   });
