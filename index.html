@@ -183,9 +183,7 @@
     vid.muted = false;
     vid.volume = 1;
 
-    const dur = isFinite(vid.duration) ? vid.duration : (target.duration ? target.duration/1000 : 600);
-    const safe = Math.max(0, dur*0.90 - len);
-    const start = Math.random()*safe + dur*0.05;
+    const start = Math.random()*(target.credits / 1000.0 - len);
 
     current = { movie: target, start, end: start+len, len };
     statusEl.textContent = `Guess the movie by audio.`;
