@@ -26,7 +26,3 @@ window.MOVIES = [
 
 ### Web App
 Just drag and drop the `index.html` file into your browser and you're good to go!
-
-## Credits
-
-The web app is almost entirely GPT 5 (pretty ideal use case for simple project with low standards and clearly documented APIs).
