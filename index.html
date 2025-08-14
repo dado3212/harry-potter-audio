@@ -1,6 +1,6 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>Plex Frame Guessr — Clips</title>
+<title>Harry Potter - Movie Clips</title>
 <style>
   :root{
     --bg:#0f1226; --bg2:#131735; --card:#171b3d; --text:#e9ecf1;
@@ -49,13 +49,13 @@
 </style>
 
 <div class="wrap">
-  <h1>Plex Frame Guessr — Clips</h1>
+  <h1>Harry Potter - Movie Clips</h1>
 
   <div class="card toolbar">
-    <button id="btnNext" class="primary">Next Clip</button>
-    <button id="btnReplay">Replay</button>
-    <button id="btnReveal">Reveal</button>
-    <span id="answer" class="label"></span>
+    <button id="btnEasy" class="primary">Easy - 15s</button>
+    <button id="btnMedium" class="primary">Medium - 10s</button>
+    <button id="btnHard" class="primary">Hard - 5s</button>
+    <button id="btnImpossible" class="primary">Impossible - 1s</button>
   </div>
 
   <div class="card vidwrap">
@@ -63,25 +63,23 @@
   </div>
 
   <div class="card info">
-    <div>
-      <div class="label">Length: <span id="len">—</span></div>
-      <div class="hint">Plays a random 5s, 10s, or 15s segment from one of your 8 movies.</div>
-    </div>
     <div class="progress"><div id="bar" class="bar"></div></div>
+    <button id="btnReplay">Replay</button>
   </div>
 </div>
 <script src="config.local.js"></script>
 <script>
-  // expects window.MOVIES predefined (your 8 objects)
   const vid = document.getElementById('vid');
-  const btnNext = document.getElementById('btnNext');
+
+  const btnEasy = document.getElementById('btnEasy');
+  const btnMedium = document.getElementById('btnMedium');
+  const btnHard = document.getElementById('btnHard');
+  const btnImpossible = document.getElementById('btnImpossible');
+
   const btnReplay = document.getElementById('btnReplay');
-  const btnReveal = document.getElementById('btnReveal');
-  const answer = document.getElementById('answer');
   const lenEl = document.getElementById('len');
   const bar = document.getElementById('bar');
 
-  const CLIP_CHOICES = [5,10,15];
   let current = null;      // {movie,start,end,len}
   let rafId = null;
 
@@ -97,17 +95,14 @@
     }
   }
 
-  async function playRandomClip(){
+  async function playRandomClip(len) {
     cancelAnim();
-    answer.textContent = "";
     const movie = pick(window.MOVIES);
-    const len = pick(CLIP_CHOICES);
     await ensureMeta(movie.url);
     const dur = isFinite(vid.duration) ? vid.duration : (movie.duration ? movie.duration/1000 : 600);
     const safe = Math.max(0, dur*0.90 - len);
     const start = Math.random()*safe + dur*0.05;
     current = { movie, start, end: start+len, len };
-    lenEl.textContent = `${len}s`;
     await seek(start);
     vid.play();
     loop();
@@ -119,11 +114,6 @@
     await seek(current.start);
     vid.play();
     loop();
-  }
-
-  async function reveal(){
-    if (!current) return;
-    answer.textContent = label(current.movie); // no timestamp
   }
 
   function seek(t){
@@ -147,10 +137,11 @@
   }
   function cancelAnim(){ if (rafId){ cancelAnimationFrame(rafId); rafId = null; bar.style.width='0%'; } }
 
-  btnNext.onclick = playRandomClip;
-  btnReplay.onclick = replayClip;
-  btnReveal.onclick = reveal;
+  btnEasy.onclick = () => playRandomClip(15);
+  btnMedium.onclick = () => playRandomClip(10);
+  btnHard.onclick = () => playRandomClip(5);
+  btnImpossible.onclick = () => playRandomClip(1);
 
-  // autoplay first clip
-  (async () => { await playRandomClip(); })();
+  btnReplay.onclick = replayClip;
+  // btnReveal.onclick = reveal;
 </script>
