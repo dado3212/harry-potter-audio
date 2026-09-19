@@ -142,13 +142,65 @@
   });
   document.getElementById('replay').onclick = replayClip;
 
-  const MOVIES = Array.isArray(window.MOVIES) ? window.MOVIES : [];
+  const MOVIES = [];
+
+  async function discoverPlexConnection() {
+    const resourcesUrl = new URL('https://plex.tv/api/v2/resources');
+    resourcesUrl.searchParams.set('X-Plex-Client-Identifier', 'harry-potter-audio');
+    resourcesUrl.searchParams.set('X-Plex-Token', window.TOKEN);
+    resourcesUrl.searchParams.set('includeHttps', '1');
+    const response = await fetch(resourcesUrl, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!response.ok) throw new Error('Plex discovery failed. Check your Plex token and reload.');
+    const resources = await response.json();
+    const configuredHost = new URL(/^https?:\/\//i.test(window.IP) ? window.IP : `http://${window.IP}`).hostname;
+    const servers = resources.filter(resource =>
+      resource.provides?.split(',').includes('server') &&
+      (resource.publicAddress === configuredHost || resource.connections?.some(connection =>
+        connection.address === configuredHost || new URL(connection.uri).hostname === configuredHost
+      ))
+    );
+    if (servers.length !== 1) throw new Error('Could not identify your Plex server. Check IP in config.local.js and reload.');
+    const server = servers[0];
+    const connection = server.connections?.find(connection =>
+      connection.protocol === 'https' && new URL(connection.uri).protocol === 'https:' &&
+      [false, 0, '0'].includes(connection.local) && [false, 0, '0'].includes(connection.relay)
+    );
+    if (!connection) throw new Error('Plex has no direct external HTTPS connection. Check Plex remote access and reload.');
+    return { baseUrl: connection.uri, token: server.accessToken || window.TOKEN };
+  }
+
+  async function initializeMovies() {
+    const buttons = Object.keys(btns).map(id => document.getElementById(id));
+    buttons.forEach(button => button.disabled = true);
+    statusEl.textContent = 'Connecting to Plex…';
+    try {
+      const { baseUrl, token } = await discoverPlexConnection();
+      const movies = (Array.isArray(window.MOVIES) ? window.MOVIES : []).map(movie => {
+        const url = new URL(`/library/parts/${encodeURIComponent(movie.partId)}/file`, baseUrl);
+        url.searchParams.set('download', '1');
+        url.searchParams.set('X-Plex-Token', token);
+        return { ...movie, url: url.href };
+      });
+      if (!movies.length) throw new Error('No movies configured. Check config.local.js and reload.');
+      MOVIES.push(...movies);
+      renderGrid();
+      statusEl.textContent = 'Pick a difficulty to play an audio clip. Then guess the movie!';
+      buttons.forEach(button => button.disabled = false);
+    } catch (error) {
+      statusEl.textContent = error instanceof TypeError || error.name === 'TimeoutError'
+        ? 'Could not connect to Plex. Check your connection and configuration, then reload.'
+        : error.message;
+    }
+  }
 
   let target = null;       // movie object
   let current = null;      // {movie,start,end,len}
   let raf = 0;
 
-  renderGrid();
+  initializeMovies();
 
   function renderGrid() {
     grid.innerHTML = '';
@@ -177,6 +229,7 @@
   }
 
   async function startRound(len){
+    if (!MOVIES.length) return;
     resetUI();
     target = pick(MOVIES);
     await ensureMeta(target.url);
@@ -184,6 +237,7 @@
     vid.volume = 1;
 
     const start = Math.random()*(target.credits / 1000.0 - len);
+    console.log(target.credits, start, len);
 
     current = { movie: target, start, end: start+len, len };
     statusEl.textContent = `Guess the movie by audio.`;
